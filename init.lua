@@ -23,53 +23,43 @@ local autocmd = vim.api.nvim_create_autocmd
 autocmd('Filetype', { pattern = { 'make' }, command = 'setlocal tabstop=4 shiftwidth=4 softtabstop=4' })
 
 function setup_lsp()
-map('n', '<leader>e', vim.diagnostic.open_float, opts)
-map('n', '<leader>q', vim.diagnostic.setloclist, opts)
+  map('n', '<leader>e', vim.diagnostic.open_float, opts)
+  map('n', '<leader>q', vim.diagnostic.setloclist, opts)
 
--- I lowkey hate autocomplete that pops up automatically
-local on_attach = function(client, bufnr)
-local chars = {}
-for i = 32, 126 do
-table.insert(chars, string.char(i))
-end
+  local on_attach = function(client, bufnr)
+     
+    map('n', '<leader>d', vim.lsp.buf.definition, bufopts)
+    map('n', '<leader>D', vim.lsp.buf.type_definition, bufopts)
+    map('n', '<leader>h', vim.lsp.buf.hover, bufopts)
+    map('n', '<leader>r', vim.lsp.buf.references, bufopts)
+    map('n', '<leader>i', vim.lsp.buf.implementation, bufopts)
+    map('i', '<C-k>', vim.lsp.completion.get, bufopts)
+  end
 
--- auto-complete for any char
-client.server_capabilities.completionProvider.triggerCharacters = chars
-vim.lsp.completion.enable(true, client.id, bufnr, { -- built-in auto-complete
-autotrigger = true,
-convert = function(item)
-return { abbr = item.label:gsub('%b()', '') }
-end,
-})
-local bufopts = { noremap=true, silent=true, buffer=bufnr }
+  local nvim_lsp = require('lspconfig')
+  function handler(server_name)
+    local opts = {
+      capabilities = capabilities,
+      on_attach = on_attach,
+    }
 
-map('n', '<leader>d', vim.lsp.buf.definition, bufopts)
-map('n', '<leader>D', vim.lsp.buf.type_definition, bufopts)
-map('n', '<leader>h', vim.lsp.buf.hover, bufopts)
-map('n', '<leader>r', vim.lsp.buf.references, bufopts)
-map('n', '<leader>i', vim.lsp.buf.implementation, bufopts)
-map('i', '<C-k>', vim.lsp.completion.get, bufopts)
-end
+    nvim_lsp[server_name].setup(opts)
+  end
 
-local nvim_lsp = require('lspconfig')
-function handler(server_name)
-local opts = {
-capabilities = capabilities,
-on_attach = on_attach,
-}
-
-nvim_lsp[server_name].setup(opts)
-end
-
-handler("pyright")
-handler("clangd")
+  handler("pyright")
+  handler("clangd")
 end
 
 
 function setup_fzf()
 local fzf = require("fzf-lua")
 fzf.setup({
-grep={
+  keymap={
+    fzf={
+      ["ctrl-q"] = "select-all+accept"
+    },
+  },
+  grep={
       rg_glob = true,
       glob_flag = "--iglob",
       glob_separator = "%s%-%-",
@@ -90,8 +80,8 @@ grep={
   map("n", "<leader>f", fzf_files, { desc = "Fzf Files", noremap=true, silent=true })
   map("n", "<leader>s", fzf_symbols, { desc = "Fzf Symbols", noremap=true, silent=true })
   map("n", "<leader>b", fzf.buffers, { desc = "Fzf Buffers", noremap=true, silent=true })
-  map("n", "<leader>F", fzf.live_grep, { desc = "Fzf Grep", noremap=true, silent=true })
-  map("n", "<leader>r", fzf_live_grep_resume, { desc = "Fzf Resume Grep", noremap=true, silent=true })
+  map("n", "<leader>/", fzf.live_grep, { desc = "Fzf Grep", noremap=true, silent=true })
+  map("n", "<leader>R", fzf_live_grep_resume, { desc = "Fzf Resume Grep", noremap=true, silent=true })
 end
 
 vim.pack.add({
@@ -106,7 +96,7 @@ vim.pack.add({
   "https://github.com/folke/which-key.nvim.git",
 })
 
-require("dracula").setup({})
+require("dracula").setup({}) -- I dont really like this actually...
 vim.cmd[[colorscheme dracula]]
 
 local ts_parsers = {
@@ -114,31 +104,13 @@ local ts_parsers = {
   "c",
   "cpp",
   "dockerfile",
-  "fish",
-  "git_config",
-  "git_rebase",
-  "gitattributes",
   "gitcommit",
-  "gitignore",
-  "go",
-  "gomod",
-  "gosum",
-  "html",
-  "javascript",
   "json",
   "lua",
   "make",
   "markdown",
   "python",
-  "rust",
-  "sql",
-  "toml",
-  "tsx",
-  "typescript",
-  "typst",
-  "vim",
   "yaml",
-  "zig",
 }
 
 setup_lsp()
@@ -170,3 +142,5 @@ require('nvim-treesitter.config').setup({
   highlight = { enable = true, additional_vim_regex_highlighting = false},
   indent = { enable = true },
 })
+
+
