@@ -27,7 +27,6 @@ function setup_lsp()
   map('n', '<leader>q', vim.diagnostic.setloclist, opts)
 
   local on_attach = function(client, bufnr)
-     
     map('n', '<leader>d', vim.lsp.buf.definition, bufopts)
     map('n', '<leader>D', vim.lsp.buf.type_definition, bufopts)
     map('n', '<leader>h', vim.lsp.buf.hover, bufopts)
@@ -84,6 +83,39 @@ fzf.setup({
   map("n", "<leader>R", fzf_live_grep_resume, { desc = "Fzf Resume Grep", noremap=true, silent=true })
 end
 
+local function setup_treesitter()
+  local ts_parsers = {
+    "bash",
+    "c",
+    "cpp",
+    "dockerfile",
+    "gitcommit",
+    "json",
+    "lua",
+    "make",
+    "markdown",
+    "python",
+    "yaml",
+  }
+  local nts = require("nvim-treesitter")
+  nts.install(ts_parsers)
+  autocmd("FileType", { -- enable treesitter highlighting and indents
+    callback = function(ev)
+      local filetype = ev.match
+      local lang = vim.treesitter.language.get_lang(filetype)
+      if vim.treesitter.language.add(lang) then
+	if vim.treesitter.query.get(filetype, "indents") then
+          vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+        end
+        if vim.treesitter.query.get(filetype, "folds") then
+          vim.wo.foldexpr = "v:lua.vim.treesitter.foldexpr()"
+        end
+        vim.treesitter.start()
+      end
+    end,
+  })
+end
+
 vim.pack.add({
   "https://github.com/nvim-lua/plenary.nvim",
   "https://github.com/Mofiqul/dracula.nvim",
@@ -94,25 +126,13 @@ vim.pack.add({
   "https://github.com/ruifm/gitlinker.nvim",
   "https://github.com/tpope/vim-fugitive",
   "https://github.com/folke/which-key.nvim.git",
+  "https://github.com/tpope/vim-sleuth.git",
 })
 
 require("dracula").setup({}) -- I dont really like this actually...
 vim.cmd[[colorscheme dracula]]
 
-local ts_parsers = {
-  "bash",
-  "c",
-  "cpp",
-  "dockerfile",
-  "gitcommit",
-  "json",
-  "lua",
-  "make",
-  "markdown",
-  "python",
-  "yaml",
-}
-
+setup_treesitter()
 setup_lsp()
 setup_fzf()
 require("treesitter-context").setup({
@@ -124,23 +144,4 @@ require("treesitter-context").setup({
 })
 
 require("gitlinker").setup({})
-
-autocmd("FileType", { -- enable treesitter highlighting and indents
-  callback = function(args)
-    local filetype = args.match
-    local lang = vim.treesitter.language.get_lang(filetype)
-    if vim.treesitter.language.add(lang) then
-      -- vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-      vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-      vim.treesitter.start()
-    end
-  end
-})
-
-require('nvim-treesitter.config').setup({
-  ensure_installed = ts_parsers,
-  highlight = { enable = true, additional_vim_regex_highlighting = false},
-  indent = { enable = true },
-})
-
 
